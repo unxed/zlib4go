@@ -61,11 +61,12 @@ func TestStreamingReaderWriter(t *testing.T) {
 
 	// Сжимаем поток
 	var compressedBuf bytes.Buffer
-	w, err := NewWriterLevel(&compressedBuf, 9)
+	w, err := NewWriterLevel(&compressedBuf, 9, false)
 	if err != nil {
 		t.Fatalf("NewWriterLevel failed: %v", err)
 	}
 
+	// Важно: записываем данные в писатель!
 	chunkSize := 10
 	for i := 0; i < len(input); i += chunkSize {
 		end := i + chunkSize
@@ -101,7 +102,7 @@ func TestBitForBitWithPython(t *testing.T) {
 
 	for _, lv := range []int{1, 6, 9} {
 		var buf bytes.Buffer
-		w, _ := NewWriterLevel(&buf, lv)
+		w, _ := NewWriterLevel(&buf, lv, false)
 		w.Write([]byte(input))
 		w.Close()
 		compWasm := buf.Bytes()

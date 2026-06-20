@@ -93,7 +93,7 @@ type Writer struct {
 	closed    bool
 }
 
-func NewWriterLevel(w io.Writer, level int) (*Writer, error) {
+func NewWriterLevel(w io.Writer, level int, raw bool) (*Writer, error) {
 	m := New()
 	strmPtr := m.Xmalloc(56)
 	if strmPtr == 0 { return nil, fmt.Errorf("zlib: malloc fail") }
@@ -104,7 +104,12 @@ func NewWriterLevel(w io.Writer, level int) (*Writer, error) {
 	copy(m.memory[verPtr:], ver)
 	defer m.Xfree(verPtr)
 
-	ret := m.XdeflateInit2_(strmPtr, int32(level), 8, 15, 8, 0, verPtr, 56)
+	windowBits := int32(15)
+	if raw {
+		windowBits = -15
+	}
+
+	ret := m.XdeflateInit2_(strmPtr, int32(level), 8, windowBits, 8, 0, verPtr, 56)
 	if ret != 0 { return nil, fmt.Errorf("deflateInit failed: %d", ret) }
 
 	bs := int32(16384)

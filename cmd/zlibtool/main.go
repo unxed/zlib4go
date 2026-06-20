@@ -8,7 +8,7 @@ import (
 
 	// Убедитесь, что этот импорт соответствует названию модуля из go.mod
 	// Если go.mod: "module zlib4go", то импорт такой:
-	"zlib4go" 
+	"github.com/unxed/zlib4go" 
 )
 
 func main() {
@@ -31,7 +31,7 @@ func main() {
 		}
 	} else {
 		// Режим сжатия
-		writer, err := zlib_wasm.NewWriterLevel(os.Stdout, *level)
+		writer, err := zlib_wasm.NewWriterLevel(os.Stdout, *level, false)
 		if err != nil {
 			log.Fatalf("Ошибка инициализации Writer: %v", err)
 		}

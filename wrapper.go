@@ -109,7 +109,7 @@ func NewWriterLevel(w io.Writer, level int, raw bool) (*Writer, error) {
 		windowBits = -15
 	}
 
-	ret := m.XdeflateInit2_(strmPtr, int32(level), 8, windowBits, 8, 0, verPtr, 56)
+    ret := m.XdeflateInit2_(strmPtr, int32(level), 8, windowBits, 9, 0, verPtr, 56)
 	if ret != 0 { return nil, fmt.Errorf("deflateInit failed: %d", ret) }
 
 	bs := int32(16384)

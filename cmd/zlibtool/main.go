@@ -6,9 +6,7 @@ import (
 	"log"
 	"os"
 
-	// Убедитесь, что этот импорт соответствует названию модуля из go.mod
-	// Если go.mod: "module zlib4go", то импорт такой:
-	"zlib4go" 
+	"github.com/unxed/zlib4go" 
 )
 
 func main() {

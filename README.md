@@ -41,6 +41,17 @@ r, _ := zlib_wasm.NewReader(inputStream)
 io.Copy(destination, r)
 r.Close()
 ```
+## Benchmarks
+
+To run performance benchmarks comparing Wasm `zlib4go`, Go standard library `compress/zlib`, and vanilla C `zlib` (via CGO):
+
+```bash
+# Run pure Go benchmarks (zlib4go Wasm vs Standard Library)
+go test -bench=. -benchmem
+
+# Run all benchmarks including vanilla C zlib (requires CGO and libz)
+go test -tags cgobench -bench=. -benchmem
+```
 
 ## Compilation (Internal)
 The underlying WebAssembly core was compiled from zlib source using:

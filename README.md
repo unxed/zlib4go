@@ -79,11 +79,11 @@ Below is a comparison of `zlib4go` (Wasm), Go standard library (`compress/zlib`)
 
 | Operation / Engine | `zlib4go` (Wasm) | Go Stdlib (`compress/zlib`) | C `zlib` (CGO) |
 | --- | --- | --- | --- |
-| **Compress (level 6)** | **~21.7 ms / op** | ~10.6 ms / op | ~13.6 ms / op |
-| **Decompress** | **~11.3 ms / op** | ~10.9 ms / op | ~1.4 ms / op |
-| **Memory Allocations** | **~288 KB / 1 alloc** | ~846 KB / 28 allocs | ~8 B / 1 alloc |
+| **Compress (level 6)** | **20.9 ms** (100% / Baseline) | 10.7 ms (**95% faster** / ~1.9x) | 13.8 ms (**51% faster** / ~1.5x) |
+| **Decompress** | **10.2 ms** (100% / Baseline) | 11.4 ms (**11% slower** / ~0.9x) | 1.4 ms (**7.2x faster** / ~7.2x) |
+| **Memory Allocations** | **~288 KB / 1 alloc** | ~846 KB / 28 allocs (**193% more memory**) | ~8 B / 1 alloc |
 
 ### Takeaways
-- **Memory Efficiency:** Thanks to `sync.Pool` caching, `zlib4go` compression is exceptionally memory-efficient, producing only 1 heap allocation per operation (for the result slice) and using less Go heap memory than the standard library.
-- **Decompression:** Performance is virtually identical to Go's standard library (~11.3 ms vs ~10.9 ms) while remaining entirely portable and dependency-free.
-- **CGO vs Wasm:** Pure Go Wasm-based compression is now less than 2x slower than native CGO, making it highly viable for environments where CGO is disabled or undesirable.
+- **Memory Efficiency:** Thanks to aggressive `sync.Pool` caching, `zlib4go` produces only **1 heap allocation** per operation (the result slice). It consumes nearly **3x less RAM** during compression than Go's standard library, significantly reducing garbage collector pressure.
+- **Decompression:** Performance is **11% faster** than Go's standard library while remaining entirely portable, thread-safe, and dependency-free.
+- **CGO vs Wasm:** Pure Go Wasm-based compression is now only **1.5x slower than raw CGO**, making it a highly competitive choice for serverless, scratch containers, and CGO-disabled environments.

@@ -7,6 +7,7 @@ import (
 	"hash/crc32"
 	"math"
 	"math/bits"
+	"unsafe"
 )
 
 type Module struct {
@@ -848,8 +849,8 @@ l18:
 			v9 = v9 + i32(-8)
 		l5:
 			{
-				// Inline load16 and store16 in the hot sliding window loop
-				t19 := int32(uint16(mem_fill[v9]) | uint16(mem_fill[v9+1])<<8)
+				// Fast unaligned 16-bit reads and writes using unsafe in the hot sliding window loop
+				t19 := int32(*(*uint16)(unsafe.Pointer(&mem_fill[v9])))
 				t20 := v9
 				v10 = t19
 				v11 = v10 - v6
@@ -857,11 +858,10 @@ l18:
 				if uint32(v11) > uint32(v10) {
 					p21 = i32(0)
 				}
-				mem_fill[t20] = byte(p21)
-				mem_fill[t20+1] = byte(p21 >> 8)
-
+				*(*uint16)(unsafe.Pointer(&mem_fill[t20])) = uint16(p21)
+				
 				v10 = v9 + i32(6)
-				t22 := int32(uint16(mem_fill[v10]) | uint16(mem_fill[v10+1])<<8)
+				t22 := int32(*(*uint16)(unsafe.Pointer(&mem_fill[v10])))
 				t23 := v10
 				v10 = t22
 				v11 = v10 - v6
@@ -869,11 +869,10 @@ l18:
 				if uint32(v11) > uint32(v10) {
 					p24 = i32(0)
 				}
-				mem_fill[t23] = byte(p24)
-				mem_fill[t23+1] = byte(p24 >> 8)
-
+				*(*uint16)(unsafe.Pointer(&mem_fill[t23])) = uint16(p24)
+				
 				v10 = v9 + i32(4)
-				t25 := int32(uint16(mem_fill[v10]) | uint16(mem_fill[v10+1])<<8)
+				t25 := int32(*(*uint16)(unsafe.Pointer(&mem_fill[v10])))
 				t26 := v10
 				v10 = t25
 				v11 = v10 - v6
@@ -881,11 +880,10 @@ l18:
 				if uint32(v11) > uint32(v10) {
 					p27 = i32(0)
 				}
-				mem_fill[t26] = byte(p27)
-				mem_fill[t26+1] = byte(p27 >> 8)
-
+				*(*uint16)(unsafe.Pointer(&mem_fill[t26])) = uint16(p27)
+				
 				v10 = v9 + i32(2)
-				t28 := int32(uint16(mem_fill[v10]) | uint16(mem_fill[v10+1])<<8)
+				t28 := int32(*(*uint16)(unsafe.Pointer(&mem_fill[v10])))
 				t29 := v10
 				v10 = t28
 				v11 = v10 - v6
@@ -893,9 +891,8 @@ l18:
 				if uint32(v11) > uint32(v10) {
 					p30 = i32(0)
 				}
-				mem_fill[t29] = byte(p30)
-				mem_fill[t29+1] = byte(p30 >> 8)
-
+				*(*uint16)(unsafe.Pointer(&mem_fill[t29])) = uint16(p30)
+				
 				v9 = v9 + i32(-8)
 				v7 = v7 + i32(-4)
 				if v7 != 0 {
@@ -936,9 +933,10 @@ l18:
 				goto l9
 			}
 			v9 = v9 + i32(-8)
-		l10:
+        l10:
 			{
-				t35 := int32(load16(m.memory[uint32(v9):]))
+				// Fast unaligned 16-bit reads and writes using unsafe in the second hot sliding window loop
+				t35 := int32(*(*uint16)(unsafe.Pointer(&mem_fill[v9])))
 				t36 := v9
 				v10 = t35
 				v11 = v10 - v6
@@ -946,9 +944,10 @@ l18:
 				if uint32(v11) > uint32(v10) {
 					p37 = i32(0)
 				}
-				store16(m.memory[uint32(t36):], uint16(p37))
+				*(*uint16)(unsafe.Pointer(&mem_fill[t36])) = uint16(p37)
+				
 				v10 = v9 + i32(6)
-				t38 := int32(load16(m.memory[uint32(v10):]))
+				t38 := int32(*(*uint16)(unsafe.Pointer(&mem_fill[v10])))
 				t39 := v10
 				v10 = t38
 				v11 = v10 - v6
@@ -956,9 +955,10 @@ l18:
 				if uint32(v11) > uint32(v10) {
 					p40 = i32(0)
 				}
-				store16(m.memory[uint32(t39):], uint16(p40))
+				*(*uint16)(unsafe.Pointer(&mem_fill[t39])) = uint16(p40)
+				
 				v10 = v9 + i32(4)
-				t41 := int32(load16(m.memory[uint32(v10):]))
+				t41 := int32(*(*uint16)(unsafe.Pointer(&mem_fill[v10])))
 				t42 := v10
 				v10 = t41
 				v11 = v10 - v6
@@ -966,9 +966,10 @@ l18:
 				if uint32(v11) > uint32(v10) {
 					p43 = i32(0)
 				}
-				store16(m.memory[uint32(t42):], uint16(p43))
+				*(*uint16)(unsafe.Pointer(&mem_fill[t42])) = uint16(p43)
+				
 				v10 = v9 + i32(2)
-				t44 := int32(load16(m.memory[uint32(v10):]))
+				t44 := int32(*(*uint16)(unsafe.Pointer(&mem_fill[v10])))
 				t45 := v10
 				v10 = t44
 				v11 = v10 - v6
@@ -976,7 +977,8 @@ l18:
 				if uint32(v11) > uint32(v10) {
 					p46 = i32(0)
 				}
-				store16(m.memory[uint32(t45):], uint16(p46))
+				*(*uint16)(unsafe.Pointer(&mem_fill[t45])) = uint16(p46)
+				
 				v9 = v9 + i32(-8)
 				v7 = v7 + i32(-4)
 				if v7 != 0 {
@@ -4781,8 +4783,9 @@ l17:
 			t112 := int32(load32(m.memory[int64(uint32(v0))+5792:]))
 			v7 = t112
 
-			// HOT LOOP OPTIMIZATION: Hoist state variables, use local slice, and inline load16/store16
+			// HOT LOOP OPTIMIZATION: Zero bounds-checks and zero function calls in loop
 			mem_opt := m.memory
+			mem_base := unsafe.Pointer(&mem_opt[0])
 			opt_prev := int32(load32(mem_opt[int64(uint32(v0))+64:]))
 			opt_wmask := int32(load32(mem_opt[int64(uint32(v0))+52:]))
 			opt_head := int32(load32(mem_opt[int64(uint32(v0))+68:]))
@@ -4790,39 +4793,42 @@ l17:
 			opt_shift := int32(load32(mem_opt[int64(uint32(v0))+88:]))
 			opt_window := int32(load32(mem_opt[int64(uint32(v0))+56:]))
 			opt_hmask := int32(load32(mem_opt[int64(uint32(v0))+84:]))
+			state_offset := int64(uint32(v0))
+
 		l16:
-			store32(mem_opt[int64(uint32(v0))+108:], uint32(v3))
+			*(*uint32)(unsafe.Pointer(uintptr(mem_base) + uintptr(state_offset+108))) = uint32(v3)
 			{
 				if uint32(v3) > uint32(v5) {
 					goto l15
 				}
-				t119 := int32(mem_opt[uint32(opt_window+v3+i32(2))])
+				// Raw unsafe byte read for slide window character
+				t119 := int32(*(*byte)(unsafe.Pointer(uintptr(mem_base) + uintptr(opt_window+v3+i32(2)))))
 				t121 := opt_prev + opt_wmask&v3<<1
-				v2 = (i32_shl(opt_hash, opt_shift) ^ t119) & opt_hmask
+
+				// Inline shift operation
+				v2 = ((opt_hash << (opt_shift & 31)) ^ t119) & opt_hmask
 				v8 = opt_head + v2<<1
-				
-				// Inline load16 (fast unaligned read)
-				t122 := int32(uint16(mem_opt[v8]) | uint16(mem_opt[v8+1])<<8)
-				
-				// Inline store16 (fast unaligned write)
-				mem_opt[t121] = byte(t122)
-				mem_opt[t121+1] = byte(t122 >> 8)
-				
+
+				// Fast unaligned 16-bit read using unsafe
+				t122 := int32(*(*uint16)(unsafe.Pointer(uintptr(mem_base) + uintptr(v8))))
+
+				// Fast unaligned 16-bit write using unsafe
+				*(*uint16)(unsafe.Pointer(uintptr(mem_base) + uintptr(t121))) = uint16(t122)
+
 				opt_hash = v2
-				store32(mem_opt[int64(uint32(v0))+72:], uint32(v2))
-				
-				// Inline store16
-				mem_opt[v8] = byte(v3)
-				mem_opt[v8+1] = byte(v3 >> 8)
+				*(*uint32)(unsafe.Pointer(uintptr(mem_base) + uintptr(state_offset+72))) = uint32(v2)
+
+				// Fast unaligned 16-bit write using unsafe
+				*(*uint16)(unsafe.Pointer(uintptr(mem_base) + uintptr(v8))) = uint16(v3)
 			}
 		l15:
-			store32(mem_opt[int64(uint32(v0))+120:], uint32(v4))
+			*(*uint32)(unsafe.Pointer(uintptr(mem_base) + uintptr(state_offset+120))) = uint32(v4)
 			v3 = v3 + i32(1)
 			v4 = v4 + i32(-1)
 			if v4 != i32(-1) {
 				goto l16
 			}
-			store32(mem_opt[int64(uint32(v0))+108:], uint32(v3))
+			*(*uint32)(unsafe.Pointer(uintptr(mem_base) + uintptr(state_offset+108))) = uint32(v3)
             store32(m.memory[int64(uint32(v0))+96:], uint32(i32(2)))
 			store32(m.memory[int64(uint32(v0))+104:], uint32(i32(0)))
 			if v7 != v6 {

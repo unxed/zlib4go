@@ -4,6 +4,7 @@ package zlib_wasm
 
 import (
 	"encoding/binary"
+	_ "hash/adler32"
 	"hash/crc32"
 	"math"
 	"math/bits"

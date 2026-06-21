@@ -6,11 +6,10 @@ import (
 	"io"
 )
 
-// Compress сжимает переданный слайс байт.
+// Compress compresses the given byte slice using the specified compression level (-1 to 9).
 func Compress(data []byte, level int) ([]byte, error) {
 	m := New()
 	sourceLen := int32(len(data))
-	// Используем глобальную функцию напрямую, если метод Module не виден
 	bound := _compressBound(sourceLen)
 
 	srcPtr := m.Xmalloc(sourceLen)
@@ -27,8 +26,7 @@ func Compress(data []byte, level int) ([]byte, error) {
 	copy(m.memory[srcPtr:], data)
 	binary.LittleEndian.PutUint32(m.memory[destLenPtr:], uint32(bound))
 
-	// В C-коде zlib compress() использует уровень 6. 
-	// Для точного контроля уровня лучше использовать Writer.
+	// By default, the C implementation uses level 6.
 	ret := m.Xcompress(destPtr, destLenPtr, srcPtr, sourceLen)
 	if ret != 0 {
 		return nil, fmt.Errorf("zlib: compression failed with code %d", ret)
@@ -40,7 +38,7 @@ func Compress(data []byte, level int) ([]byte, error) {
 	return result, nil
 }
 
-// Decompress распаковывает сжатый zlib-буфер.
+// Decompress decompresses a zlib-compressed buffer.
 func Decompress(data []byte) ([]byte, error) {
 	m := New()
 	sourceLen := int32(len(data))
@@ -63,7 +61,7 @@ func Decompress(data []byte) ([]byte, error) {
 		binary.LittleEndian.PutUint32(m.memory[destLenPtr:], uint32(destLen))
 
 		ret := m.Xuncompress(destPtr, destLenPtr, srcPtr, sourceLen)
-		if ret == -5 { // Z_BUF_ERROR: буфер мал
+		if ret == -5 { // Z_BUF_ERROR: destination buffer is too small
 			m.Xfree(destPtr)
 			destLen *= 2
 			continue
@@ -82,7 +80,7 @@ func Decompress(data []byte) ([]byte, error) {
 	}
 }
 
-// Writer для сжатия
+// Writer implements an io.WriteCloser that compresses data to an underlying io.Writer.
 type Writer struct {
 	m         *Module
 	w         io.Writer
@@ -148,7 +146,7 @@ func (w *Writer) Close() error {
 	return nil
 }
 
-// Reader для распаковки
+// Reader implements an io.ReadCloser that decompresses data from an underlying io.Reader.
 type Reader struct {
 	m *Module; r io.Reader; strmPtr, inBufPtr, outBufPtr, bufSize int32
 	inBuf []byte; eof, closed bool

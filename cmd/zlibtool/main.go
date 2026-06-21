@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"flag"
 	"io"
 	"log"
@@ -10,38 +11,43 @@ import (
 )
 
 func main() {
-	// Флаги запуска
-	decompress := flag.Bool("d", false, "Распаковать поток (по умолчанию сжимает)")
-	level := flag.Int("l", -1, "Уровень сжатия (от -1 до 9)")
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: zlibtool [-d] [-l level]\n\n")
+		fmt.Fprintf(os.Stderr, "zlibtool compresses or decompresses stdin to stdout using Wasm-based zlib.\n\n")
+		flag.PrintDefaults()
+	}
+
+	decompress := flag.Bool("d", false, "Decompress input (default is compression)")
+	level := flag.Int("l", -1, "Compression level (-1 to 9)")
 	flag.Parse()
 
 	if *decompress {
-		// Режим распаковки
+		// Decompression mode
 		reader, err := zlib_wasm.NewReader(os.Stdin)
 		if err != nil {
-			log.Fatalf("Ошибка инициализации Reader: %v", err)
+			log.Fatalf("Failed to initialize Reader: %v", err)
 		}
 		defer reader.Close()
 
 		_, err = io.Copy(os.Stdout, reader)
 		if err != nil {
-			log.Fatalf("Ошибка распаковки: %v", err)
+			log.Fatalf("Decompression failed: %v", err)
 		}
 	} else {
-		// Режим сжатия
+		// Compression mode
 		writer, err := zlib_wasm.NewWriterLevel(os.Stdout, *level)
 		if err != nil {
-			log.Fatalf("Ошибка инициализации Writer: %v", err)
+			log.Fatalf("Failed to initialize Writer: %v", err)
 		}
-		
+
 		_, err = io.Copy(writer, os.Stdin)
 		if err != nil {
-			log.Fatalf("Ошибка сжатия: %v", err)
+			log.Fatalf("Compression failed: %v", err)
 		}
-		
+
 		err = writer.Close()
 		if err != nil {
-			log.Fatalf("Ошибка закрытия потока: %v", err)
+			log.Fatalf("Failed to close stream: %v", err)
 		}
 	}
 }

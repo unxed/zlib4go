@@ -4,11 +4,33 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"sync"
 )
+
+var modulePool = sync.Pool{
+	New: func() any {
+		return New()
+	},
+}
+
+// getModule retrieves a module from the pool and resets its initial state.
+func getModule() *Module {
+	m := modulePool.Get().(*Module)
+	// Restore global data area (zlib's tables, etc.)
+	memory_init(m.memory, data0, uint32(i32(1024)), 0, len(data0))
+	// Reset stack pointer to the initial state defined in New()
+	m.___stack_pointer = i32(78160)
+	return m
+}
+
+func putModule(m *Module) {
+	modulePool.Put(m)
+}
 
 // Compress compresses the given byte slice using the specified compression level (-1 to 9).
 func Compress(data []byte, level int) ([]byte, error) {
-	m := New()
+	m := getModule()
+	defer putModule(m)
 	sourceLen := int32(len(data))
 	bound := _compressBound(sourceLen)
 
@@ -40,7 +62,8 @@ func Compress(data []byte, level int) ([]byte, error) {
 
 // Decompress decompresses a zlib-compressed buffer.
 func Decompress(data []byte) ([]byte, error) {
-	m := New()
+	m := getModule()
+	defer putModule(m)
 	sourceLen := int32(len(data))
 	destLen := sourceLen * 4
 	if destLen < 1024 { destLen = 1024 }
@@ -92,7 +115,7 @@ type Writer struct {
 }
 
 func NewWriterLevel(w io.Writer, level int) (*Writer, error) {
-	m := New()
+	m := getModule()
 	strmPtr := m.Xmalloc(56)
 	if strmPtr == 0 { return nil, fmt.Errorf("zlib: malloc fail") }
 	for i := int32(0); i < 56; i++ { m.memory[strmPtr+i] = 0 }
@@ -143,6 +166,7 @@ func (w *Writer) Close() error {
 		if ret == 1 { break }
 	}
 	w.m.XdeflateEnd(w.strmPtr); w.m.Xfree(w.strmPtr); w.m.Xfree(w.inBufPtr); w.m.Xfree(w.outBufPtr)
+	putModule(w.m)
 	return nil
 }
 
@@ -153,7 +177,7 @@ type Reader struct {
 }
 
 func NewReader(r io.Reader) (*Reader, error) {
-	m := New(); strmPtr := m.Xmalloc(56)
+	m := getModule(); strmPtr := m.Xmalloc(56)
 	for i := int32(0); i < 56; i++ { m.memory[strmPtr+i] = 0 }
 	ver := "1.3.2.1\x00"; vPtr := m.Xmalloc(int32(len(ver)))
 	copy(m.memory[vPtr:], ver); defer m.Xfree(vPtr)
@@ -203,6 +227,7 @@ func (rd *Reader) Close() error {
 		rd.closed = true
 		rd.m.XinflateEnd(rd.strmPtr)
 		rd.m.Xfree(rd.strmPtr); rd.m.Xfree(rd.inBufPtr); rd.m.Xfree(rd.outBufPtr)
+		putModule(rd.m)
 	}
 	return nil
 }

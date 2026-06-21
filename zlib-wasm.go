@@ -4769,27 +4769,32 @@ l17:
 			v6 = t111
 			t112 := int32(load32(m.memory[int64(uint32(v0))+5792:]))
 			v7 = t112
+
+			// HOT LOOP OPTIMIZATION: Hoist state variables and use local slice
+			mem_opt := m.memory
+			opt_prev := int32(load32(mem_opt[int64(uint32(v0))+64:]))
+			opt_wmask := int32(load32(mem_opt[int64(uint32(v0))+52:]))
+			opt_head := int32(load32(mem_opt[int64(uint32(v0))+68:]))
+			opt_hash := int32(load32(mem_opt[int64(uint32(v0))+72:]))
+			opt_shift := int32(load32(mem_opt[int64(uint32(v0))+88:]))
+			opt_window := int32(load32(mem_opt[int64(uint32(v0))+56:]))
+			opt_hmask := int32(load32(mem_opt[int64(uint32(v0))+84:]))
+
 		l16:
-			store32(m.memory[int64(uint32(v0))+108:], uint32(v3))
+			store32(mem_opt[int64(uint32(v0))+108:], uint32(v3))
 			{
 				if uint32(v3) > uint32(v5) {
 					goto l15
 				}
-				t113 := int32(load32(m.memory[int64(uint32(v0))+64:]))
-				t114 := int32(load32(m.memory[int64(uint32(v0))+52:]))
-				t115 := int32(load32(m.memory[int64(uint32(v0))+68:]))
-				t116 := int32(load32(m.memory[int64(uint32(v0))+72:]))
-				t117 := int32(load32(m.memory[int64(uint32(v0))+88:]))
-				t118 := int32(load32(m.memory[int64(uint32(v0))+56:]))
-				t119 := int32(m.memory[uint32(t118+v3+i32(2))])
-				t120 := int32(load32(m.memory[int64(uint32(v0))+84:]))
-				t121 := t113 + t114&v3<<1
-				v2 = (i32_shl(t116, t117) ^ t119) & t120
-				v8 = t115 + v2<<1
-				t122 := int32(load16(m.memory[uint32(v8):]))
-				store16(m.memory[uint32(t121):], uint16(t122))
-				store32(m.memory[int64(uint32(v0))+72:], uint32(v2))
-				store16(m.memory[uint32(v8):], uint16(v3))
+				t119 := int32(mem_opt[uint32(opt_window+v3+i32(2))])
+				t121 := opt_prev + opt_wmask&v3<<1
+				v2 = (i32_shl(opt_hash, opt_shift) ^ t119) & opt_hmask
+				v8 = opt_head + v2<<1
+				t122 := int32(load16(mem_opt[uint32(v8):]))
+				store16(mem_opt[uint32(t121):], uint16(t122))
+				opt_hash = v2
+				store32(mem_opt[int64(uint32(v0))+72:], uint32(v2))
+				store16(mem_opt[uint32(v8):], uint16(v3))
 			}
 		l15:
 			store32(m.memory[int64(uint32(v0))+120:], uint32(v4))

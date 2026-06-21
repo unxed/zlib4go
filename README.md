@@ -73,3 +73,17 @@ $WASI_SDK_PATH/bin/clang -O3 -nostartfiles \
   -o zlib.wasm \
   adler32.c crc32.c deflate.c infback.c inffast.c inflate.c inftrees.c trees.c zutil.c compress.c uncompr.c
 ```
+## Performance Benchmarks
+
+Below is a comparison of `zlib4go` (Wasm), Go standard library (`compress/zlib`), and native C `zlib` (via CGO) on a ~2.5 MB redundant text payload (Intel i5-6300U @ 2.40GHz, Linux amd64):
+
+| Operation / Engine | `zlib4go` (Wasm) | Go Stdlib (`compress/zlib`) | C `zlib` (CGO) |
+| --- | --- | --- | --- |
+| **Compress (level 6)** | **~21.7 ms / op** | ~10.6 ms / op | ~13.6 ms / op |
+| **Decompress** | **~11.3 ms / op** | ~10.9 ms / op | ~1.4 ms / op |
+| **Memory Allocations** | **~288 KB / 1 alloc** | ~846 KB / 28 allocs | ~8 B / 1 alloc |
+
+### Takeaways
+- **Memory Efficiency:** Thanks to `sync.Pool` caching, `zlib4go` compression is exceptionally memory-efficient, producing only 1 heap allocation per operation (for the result slice) and using less Go heap memory than the standard library.
+- **Decompression:** Performance is virtually identical to Go's standard library (~11.3 ms vs ~10.9 ms) while remaining entirely portable and dependency-free.
+- **CGO vs Wasm:** Pure Go Wasm-based compression is now less than 2x slower than native CGO, making it highly viable for environments where CGO is disabled or undesirable.

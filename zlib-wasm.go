@@ -775,7 +775,8 @@ l0:
 }
 func (m *Module) _fill_window(v0 int32) {
 	var v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11 int32
-	t0 := int32(load32(m.memory[int64(uint32(v0))+44:]))
+	mem_fill := m.memory
+	t0 := int32(load32(mem_fill[int64(uint32(v0))+44:]))
 	v1 = t0
 	v2 = v1 + i32(-262)
 	t1 := int32(load32(m.memory[int64(uint32(v0))+116:]))
@@ -847,7 +848,8 @@ l18:
 			v9 = v9 + i32(-8)
 		l5:
 			{
-				t19 := int32(load16(m.memory[uint32(v9):]))
+				// Inline load16 and store16 in the hot sliding window loop
+				t19 := int32(uint16(mem_fill[v9]) | uint16(mem_fill[v9+1])<<8)
 				t20 := v9
 				v10 = t19
 				v11 = v10 - v6
@@ -855,9 +857,11 @@ l18:
 				if uint32(v11) > uint32(v10) {
 					p21 = i32(0)
 				}
-				store16(m.memory[uint32(t20):], uint16(p21))
+				mem_fill[t20] = byte(p21)
+				mem_fill[t20+1] = byte(p21 >> 8)
+
 				v10 = v9 + i32(6)
-				t22 := int32(load16(m.memory[uint32(v10):]))
+				t22 := int32(uint16(mem_fill[v10]) | uint16(mem_fill[v10+1])<<8)
 				t23 := v10
 				v10 = t22
 				v11 = v10 - v6
@@ -865,9 +869,11 @@ l18:
 				if uint32(v11) > uint32(v10) {
 					p24 = i32(0)
 				}
-				store16(m.memory[uint32(t23):], uint16(p24))
+				mem_fill[t23] = byte(p24)
+				mem_fill[t23+1] = byte(p24 >> 8)
+
 				v10 = v9 + i32(4)
-				t25 := int32(load16(m.memory[uint32(v10):]))
+				t25 := int32(uint16(mem_fill[v10]) | uint16(mem_fill[v10+1])<<8)
 				t26 := v10
 				v10 = t25
 				v11 = v10 - v6
@@ -875,9 +881,11 @@ l18:
 				if uint32(v11) > uint32(v10) {
 					p27 = i32(0)
 				}
-				store16(m.memory[uint32(t26):], uint16(p27))
+				mem_fill[t26] = byte(p27)
+				mem_fill[t26+1] = byte(p27 >> 8)
+
 				v10 = v9 + i32(2)
-				t28 := int32(load16(m.memory[uint32(v10):]))
+				t28 := int32(uint16(mem_fill[v10]) | uint16(mem_fill[v10+1])<<8)
 				t29 := v10
 				v10 = t28
 				v11 = v10 - v6
@@ -885,7 +893,9 @@ l18:
 				if uint32(v11) > uint32(v10) {
 					p30 = i32(0)
 				}
-				store16(m.memory[uint32(t29):], uint16(p30))
+				mem_fill[t29] = byte(p30)
+				mem_fill[t29+1] = byte(p30 >> 8)
+
 				v9 = v9 + i32(-8)
 				v7 = v7 + i32(-4)
 				if v7 != 0 {
@@ -4764,13 +4774,14 @@ l17:
 			v5 = v8 + v5 + i32(-3)
 			t110 := int32(load32(m.memory[int64(uint32(v0))+108:]))
 			v3 = t110 + i32(1)
+			
 			v4 = v2 + i32(-3)
 			t111 := int32(load32(m.memory[int64(uint32(v0))+5796:]))
 			v6 = t111
 			t112 := int32(load32(m.memory[int64(uint32(v0))+5792:]))
 			v7 = t112
 
-			// HOT LOOP OPTIMIZATION: Hoist state variables and use local slice
+			// HOT LOOP OPTIMIZATION: Hoist state variables, use local slice, and inline load16/store16
 			mem_opt := m.memory
 			opt_prev := int32(load32(mem_opt[int64(uint32(v0))+64:]))
 			opt_wmask := int32(load32(mem_opt[int64(uint32(v0))+52:]))
@@ -4779,7 +4790,6 @@ l17:
 			opt_shift := int32(load32(mem_opt[int64(uint32(v0))+88:]))
 			opt_window := int32(load32(mem_opt[int64(uint32(v0))+56:]))
 			opt_hmask := int32(load32(mem_opt[int64(uint32(v0))+84:]))
-
 		l16:
 			store32(mem_opt[int64(uint32(v0))+108:], uint32(v3))
 			{
@@ -4790,21 +4800,30 @@ l17:
 				t121 := opt_prev + opt_wmask&v3<<1
 				v2 = (i32_shl(opt_hash, opt_shift) ^ t119) & opt_hmask
 				v8 = opt_head + v2<<1
-				t122 := int32(load16(mem_opt[uint32(v8):]))
-				store16(mem_opt[uint32(t121):], uint16(t122))
+				
+				// Inline load16 (fast unaligned read)
+				t122 := int32(uint16(mem_opt[v8]) | uint16(mem_opt[v8+1])<<8)
+				
+				// Inline store16 (fast unaligned write)
+				mem_opt[t121] = byte(t122)
+				mem_opt[t121+1] = byte(t122 >> 8)
+				
 				opt_hash = v2
 				store32(mem_opt[int64(uint32(v0))+72:], uint32(v2))
-				store16(mem_opt[uint32(v8):], uint16(v3))
+				
+				// Inline store16
+				mem_opt[v8] = byte(v3)
+				mem_opt[v8+1] = byte(v3 >> 8)
 			}
 		l15:
-			store32(m.memory[int64(uint32(v0))+120:], uint32(v4))
+			store32(mem_opt[int64(uint32(v0))+120:], uint32(v4))
 			v3 = v3 + i32(1)
 			v4 = v4 + i32(-1)
 			if v4 != i32(-1) {
 				goto l16
 			}
-			store32(m.memory[int64(uint32(v0))+108:], uint32(v3))
-			store32(m.memory[int64(uint32(v0))+96:], uint32(i32(2)))
+			store32(mem_opt[int64(uint32(v0))+108:], uint32(v3))
+            store32(m.memory[int64(uint32(v0))+96:], uint32(i32(2)))
 			store32(m.memory[int64(uint32(v0))+104:], uint32(i32(0)))
 			if v7 != v6 {
 				goto l17

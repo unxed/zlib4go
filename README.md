@@ -51,6 +51,12 @@ go test -bench=. -benchmem
 
 # Run all benchmarks including vanilla C zlib (requires CGO and libz)
 go test -tags cgobench -bench=. -benchmem
+
+```
+| Speed | zlib (CGO) | compress/zlib | zlib4go (Wasm) |
+| :--- | :---: | :---: | :---: |
+| Compression | 100% | +26% | -7% |
+| Decompression | 100% | -84% | -80% |
 ```
 
 ## Compilation (Internal)

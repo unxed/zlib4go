@@ -1,0 +1,3 @@
+#!/bin/bash
+go test ./...
+go test -bench="Benchmark.*" -benchmem ./cgobench -tags cgobench

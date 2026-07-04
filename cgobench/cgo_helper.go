@@ -1,6 +1,6 @@
 //go:build cgobench
 
-package zlib_wasm
+package cgobench
 
 /*
 #cgo LDFLAGS: -lz
@@ -14,11 +14,10 @@ import (
 	"unsafe"
 )
 
-func runCGOCompressBench(b *testing.B, data []byte) {
+func RunCGOCompressBench(b *testing.B, data []byte) {
 	b.SetBytes(int64(len(data)))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		// Формула размера буфера по умолчанию для zlib
 		destLen := C.uLong(len(data) + len(data)/1000 + 12)
 		dest := C.malloc(C.size_t(destLen))
 
@@ -32,9 +31,8 @@ func runCGOCompressBench(b *testing.B, data []byte) {
 	}
 }
 
-func runCGODecompressBench(b *testing.B, data []byte) {
+func RunCGODecompressBench(b *testing.B, data []byte) {
 	b.SetBytes(int64(len(data)))
-	// Подготавливаем сжатые данные заранее
 	compLen := C.uLong(len(data) + len(data)/1000 + 12)
 	compDest := C.malloc(C.size_t(compLen))
 	C.compress((*C.Bytef)(compDest), &compLen, (*C.Bytef)(unsafe.Pointer(&data[0])), C.uLong(len(data)))

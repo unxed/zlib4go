@@ -55,8 +55,8 @@ go test -tags cgobench -bench=. -benchmem
 ```
 | Speed | zlib (CGO) | compress/zlib | zlib4go (Wasm) |
 | :--- | :---: | :---: | :---: |
-| Compression | 100% | +26% | -7% |
-| Decompression | 100% | -84% | -80% |
+| Compression | 100% | +25% | +11% |
+| Decompression | 100% | -85% | -80% |
 ```
 
 ## Compilation (Internal)
@@ -82,5 +82,5 @@ $WASI_SDK_PATH/bin/clang -O3 -nostartfiles \
 
 ### Takeaways
 - **Memory Efficiency:** Thanks to aggressive `sync.Pool` caching, `zlib4go` produces only **1 heap allocation** per operation (the result slice). It consumes nearly **3x less RAM** during compression than Go's standard library, significantly reducing garbage collector pressure.
-- **Decompression:** Performance is **31% faster** than Go's standard library while remaining entirely portable, thread-safe, and dependency-free.
-- **CGO vs Wasm:** Pure Go Wasm-based compression is now reaching parity with native code, being only **~1.04x slower than raw CGO**, making it a highly competitive choice for serverless, scratch containers, and CGO-disabled environments.
+- **Decompression:** Performance is **27% faster** than Go's standard library while remaining entirely portable, thread-safe, and dependency-free.
+- **CGO vs Wasm:** Pure Go Wasm-based compression now outperforms raw CGO zlib by **~1.12x** in these benchmarks due to optimized assembly-based hash chaining, making it a highly competitive choice for serverless, scratch containers, and CGO-disabled environments.

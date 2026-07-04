@@ -3706,25 +3706,17 @@ l8:
 					v12 = t48
 					t49 := int32(load32(m.memory[int64(uint32(v0))+88:]))
 					v13 = t49
-				l7:
-					{
-						store32(m.memory[int64(uint32(v0))+108:], uint32(v2))
-						t50 := int32(m.memory[uint32(v12+v2+i32(2))])
-						t51 := v9 + v8&v2<<1
-						t52 := v10
-						v3 = (i32_shl(v3, v13) ^ t50) & v11
-						v4 = t52 + v3<<1
-						t53 := int32(load16(m.memory[uint32(v4):]))
-						store16(m.memory[uint32(t51):], uint16(t53))
-						store32(m.memory[int64(uint32(v0))+96:], uint32(v5))
-						store32(m.memory[int64(uint32(v0))+72:], uint32(v3))
-						store16(m.memory[uint32(v4):], uint16(v2))
-						v2 = v2 + i32(1)
-						v5 = v5 + i32(-1)
-						if v5 != i32(-1) {
-							goto l7
-						}
-					}
+//			l7:
+				{
+					endPos := v2 + v5 + i32(1)
+					masks := uint64(uint32(v8)) | (uint64(uint32(v11)) << 32)
+					v3 = updateHashChain(unsafe.Pointer(&m.memory[0]), v2, endPos, v12+i32(2), v10, v9, masks, v13, v3)
+					v2 = endPos
+					v5 = i32(-1)
+					store32(m.memory[int64(uint32(v0))+108:], uint32(v2))
+					store32(m.memory[int64(uint32(v0))+96:], uint32(i32(0)))
+					store32(m.memory[int64(uint32(v0))+72:], uint32(v3))
+				}
 					store32(m.memory[int64(uint32(v0))+108:], uint32(v2))
 					if v7 != v6 {
 						goto l8
@@ -4003,6 +3995,7 @@ l15:
 func (m *Module) _longest_match(v0, v1 int32) int32 {
 	var v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12, v13, v14, v15, v16, v17, v18, v19 int32
 	mem := m.memory
+	memPtr := unsafe.Pointer(unsafe.SliceData(mem))
 	t0 := int32(load32(mem[int64(uint32(v0))+124:]))
 	v2 = t0
 	t1 := int32(load32(mem[int64(uint32(v0))+120:]))
@@ -4077,8 +4070,8 @@ l6:
 				v4 = v10 + v18
 				v5 = v17 + v18
 
-				val1 := *(*uint64)(unsafe.Add(unsafe.Pointer(unsafe.SliceData(mem)), uintptr(uint32(v4+3))))
-				val2 := *(*uint64)(unsafe.Add(unsafe.Pointer(unsafe.SliceData(mem)), uintptr(uint32(v5+3))))
+				val1 := *(*uint64)(unsafe.Add(memPtr, uintptr(uint32(v4+3))))
+				val2 := *(*uint64)(unsafe.Add(memPtr, uintptr(uint32(v5+3))))
 				diff := val1 ^ val2
 
 				if diff != 0 {
@@ -4507,36 +4500,19 @@ l17:
 			opt_hmask := int32(load32(mem_opt[int64(uint32(v0))+84:]))
 			state_offset := int64(uint32(v0))
 
-		l16:
-			{
-				if uint32(v3) > uint32(v5) {
-					goto l15
-				}
-				// Raw unsafe byte read for slide window character
-				t119 := int32(*(*byte)(unsafe.Pointer(uintptr(mem_base) + uintptr(opt_window+v3+i32(2)))))
-				t121 := opt_prev + opt_wmask&v3<<1
-
-				// Inline shift operation
-				v2 = ((opt_hash << (opt_shift & 31)) ^ t119) & opt_hmask
-				v8 = opt_head + v2<<1
-
-				// Fast unaligned 16-bit read using unsafe
-				t122 := int32(*(*uint16)(unsafe.Pointer(uintptr(mem_base) + uintptr(v8))))
-
-				// Fast unaligned 16-bit write using unsafe
-				*(*uint16)(unsafe.Pointer(uintptr(mem_base) + uintptr(t121))) = uint16(t122)
-
-				opt_hash = v2
-
-				// Fast unaligned 16-bit write using unsafe
-				*(*uint16)(unsafe.Pointer(uintptr(mem_base) + uintptr(v8))) = uint16(v3)
+			iters := v4 + i32(1)
+			count := iters
+			if maxCount := v5 - v3 + i32(1); count > maxCount {
+				count = maxCount
 			}
-		l15:
-			v3 = v3 + i32(1)
-			v4 = v4 + i32(-1)
-			if v4 != i32(-1) {
-				goto l16
+			if count > 0 {
+				endPos := v3 + count
+				masks := uint64(uint32(opt_wmask)) | (uint64(uint32(opt_hmask)) << 32)
+				opt_hash = updateHashChain(mem_base, v3, endPos, opt_window+i32(2), opt_head, opt_prev, masks, opt_shift, opt_hash)
 			}
+			v3 = v3 + iters
+			v4 = i32(-1)
+
 			*(*uint32)(unsafe.Pointer(uintptr(mem_base) + uintptr(state_offset+108))) = uint32(v3)
 			*(*uint32)(unsafe.Pointer(uintptr(mem_base) + uintptr(state_offset+120))) = uint32(v4)
 			*(*uint32)(unsafe.Pointer(uintptr(mem_base) + uintptr(state_offset+72))) = uint32(opt_hash)

@@ -17,6 +17,7 @@ func getBenchData() []byte {
 
 func BenchmarkCompressWasm(b *testing.B) {
 	data := getBenchData()
+	b.SetBytes(int64(len(data)))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, err := Compress(data, 6)
@@ -29,6 +30,7 @@ func BenchmarkCompressWasm(b *testing.B) {
 func BenchmarkDecompressWasm(b *testing.B) {
 	data := getBenchData()
 	compressed, _ := Compress(data, 6)
+	b.SetBytes(int64(len(data)))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, err := Decompress(compressed)
@@ -42,6 +44,7 @@ func BenchmarkDecompressWasm(b *testing.B) {
 
 func BenchmarkCompressStdlib(b *testing.B) {
 	data := getBenchData()
+	b.SetBytes(int64(len(data)))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var buf bytes.Buffer
@@ -53,6 +56,7 @@ func BenchmarkCompressStdlib(b *testing.B) {
 
 func BenchmarkDecompressStdlib(b *testing.B) {
 	data := getBenchData()
+	b.SetBytes(int64(len(data)))
 	var buf bytes.Buffer
 	w, _ := zlib.NewWriterLevel(&buf, 6)
 	w.Write(data)

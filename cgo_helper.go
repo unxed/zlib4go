@@ -15,6 +15,7 @@ import (
 )
 
 func runCGOCompressBench(b *testing.B, data []byte) {
+	b.SetBytes(int64(len(data)))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		// Формула размера буфера по умолчанию для zlib
@@ -32,6 +33,7 @@ func runCGOCompressBench(b *testing.B, data []byte) {
 }
 
 func runCGODecompressBench(b *testing.B, data []byte) {
+	b.SetBytes(int64(len(data)))
 	// Подготавливаем сжатые данные заранее
 	compLen := C.uLong(len(data) + len(data)/1000 + 12)
 	compDest := C.malloc(C.size_t(compLen))

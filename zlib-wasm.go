@@ -3,7 +3,6 @@
 package zlib_wasm
 
 import (
-	"encoding/binary"
 	"hash/crc32"
 	"math"
 	"math/bits"
@@ -17,33 +16,31 @@ func adler32_fast(adler int32, buf []byte) int32 {
 	s2 := uint32(adler) >> 16
 
 	for len(buf) > 0 {
-		var chunk []byte
-		if len(buf) > 3800 {
-			chunk = buf[:3800]
-			buf = buf[3800:]
-		} else {
-			chunk = buf
-			buf = nil
+		n := len(buf)
+		if n > 3800 {
+			n = 3800
 		}
+		chunk := buf[:n]
+		buf = buf[n:]
 
-		// Process 16-byte blocks to let compiler optimize the loop
 		for len(chunk) >= 16 {
-			s1 += uint32(chunk[0]); s2 += s1
-			s1 += uint32(chunk[1]); s2 += s1
-			s1 += uint32(chunk[2]); s2 += s1
-			s1 += uint32(chunk[3]); s2 += s1
-			s1 += uint32(chunk[4]); s2 += s1
-			s1 += uint32(chunk[5]); s2 += s1
-			s1 += uint32(chunk[6]); s2 += s1
-			s1 += uint32(chunk[7]); s2 += s1
-			s1 += uint32(chunk[8]); s2 += s1
-			s1 += uint32(chunk[9]); s2 += s1
-			s1 += uint32(chunk[10]); s2 += s1
-			s1 += uint32(chunk[11]); s2 += s1
-			s1 += uint32(chunk[12]); s2 += s1
-			s1 += uint32(chunk[13]); s2 += s1
-			s1 += uint32(chunk[14]); s2 += s1
-			s1 += uint32(chunk[15]); s2 += s1
+			sub := chunk[:16]
+			s1 += uint32(sub[0]); s2 += s1
+			s1 += uint32(sub[1]); s2 += s1
+			s1 += uint32(sub[2]); s2 += s1
+			s1 += uint32(sub[3]); s2 += s1
+			s1 += uint32(sub[4]); s2 += s1
+			s1 += uint32(sub[5]); s2 += s1
+			s1 += uint32(sub[6]); s2 += s1
+			s1 += uint32(sub[7]); s2 += s1
+			s1 += uint32(sub[8]); s2 += s1
+			s1 += uint32(sub[9]); s2 += s1
+			s1 += uint32(sub[10]); s2 += s1
+			s1 += uint32(sub[11]); s2 += s1
+			s1 += uint32(sub[12]); s2 += s1
+			s1 += uint32(sub[13]); s2 += s1
+			s1 += uint32(sub[14]); s2 += s1
+			s1 += uint32(sub[15]); s2 += s1
 			chunk = chunk[16:]
 		}
 		for _, b := range chunk {
@@ -551,6 +548,7 @@ l0:
 }
 func (m *Module) _fill_window(v0 int32) {
 	var v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11 int32
+	var p_fill, p_fill2 uintptr
 	mem_fill := m.memory
 	t0 := int32(load32(mem_fill[int64(uint32(v0))+44:]))
 	v1 = t0
@@ -622,52 +620,38 @@ l18:
 				goto l4
 			}
 			v9 = v9 + i32(-8)
+			p_fill = uintptr(unsafe.Pointer(&mem_fill[v9]))
 		l5:
 			{
-				// Fast unaligned 16-bit reads and writes using unsafe in the hot sliding window loop
-				t19 := int32(*(*uint16)(unsafe.Pointer(&mem_fill[v9])))
-				t20 := v9
-				v10 = t19
-				v11 = v10 - v6
-				p21 := v11
-				if uint32(v11) > uint32(v10) {
-					p21 = i32(0)
+				t19 := int32(*(*uint16)(unsafe.Pointer(p_fill)))
+				diff1 := t19 - v6
+				if diff1 < 0 {
+					diff1 = 0
 				}
-				*(*uint16)(unsafe.Pointer(&mem_fill[t20])) = uint16(p21)
-				
-				v10 = v9 + i32(6)
-				t22 := int32(*(*uint16)(unsafe.Pointer(&mem_fill[v10])))
-				t23 := v10
-				v10 = t22
-				v11 = v10 - v6
-				p24 := v11
-				if uint32(v11) > uint32(v10) {
-					p24 = i32(0)
+				*(*uint16)(unsafe.Pointer(p_fill)) = uint16(diff1)
+
+				t28 := int32(*(*uint16)(unsafe.Pointer(p_fill + 2)))
+				diff4 := t28 - v6
+				if diff4 < 0 {
+					diff4 = 0
 				}
-				*(*uint16)(unsafe.Pointer(&mem_fill[t23])) = uint16(p24)
-				
-				v10 = v9 + i32(4)
-				t25 := int32(*(*uint16)(unsafe.Pointer(&mem_fill[v10])))
-				t26 := v10
-				v10 = t25
-				v11 = v10 - v6
-				p27 := v11
-				if uint32(v11) > uint32(v10) {
-					p27 = i32(0)
+				*(*uint16)(unsafe.Pointer(p_fill + 2)) = uint16(diff4)
+
+				t25 := int32(*(*uint16)(unsafe.Pointer(p_fill + 4)))
+				diff3 := t25 - v6
+				if diff3 < 0 {
+					diff3 = 0
 				}
-				*(*uint16)(unsafe.Pointer(&mem_fill[t26])) = uint16(p27)
-				
-				v10 = v9 + i32(2)
-				t28 := int32(*(*uint16)(unsafe.Pointer(&mem_fill[v10])))
-				t29 := v10
-				v10 = t28
-				v11 = v10 - v6
-				p30 := v11
-				if uint32(v11) > uint32(v10) {
-					p30 = i32(0)
+				*(*uint16)(unsafe.Pointer(p_fill + 4)) = uint16(diff3)
+
+				t22 := int32(*(*uint16)(unsafe.Pointer(p_fill + 6)))
+				diff2 := t22 - v6
+				if diff2 < 0 {
+					diff2 = 0
 				}
-				*(*uint16)(unsafe.Pointer(&mem_fill[t29])) = uint16(p30)
-				
+				*(*uint16)(unsafe.Pointer(p_fill + 6)) = uint16(diff2)
+
+				p_fill -= 8
 				v9 = v9 + i32(-8)
 				v7 = v7 + i32(-4)
 				if v7 != 0 {
@@ -708,52 +692,38 @@ l18:
 				goto l9
 			}
 			v9 = v9 + i32(-8)
-        l10:
+			p_fill2 = uintptr(unsafe.Pointer(&mem_fill[v9]))
+		l10:
 			{
-				// Fast unaligned 16-bit reads and writes using unsafe in the second hot sliding window loop
-				t35 := int32(*(*uint16)(unsafe.Pointer(&mem_fill[v9])))
-				t36 := v9
-				v10 = t35
-				v11 = v10 - v6
-				p37 := v11
-				if uint32(v11) > uint32(v10) {
-					p37 = i32(0)
+				t35 := int32(*(*uint16)(unsafe.Pointer(p_fill2)))
+				diff1 := t35 - v6
+				if diff1 < 0 {
+					diff1 = 0
 				}
-				*(*uint16)(unsafe.Pointer(&mem_fill[t36])) = uint16(p37)
-				
-				v10 = v9 + i32(6)
-				t38 := int32(*(*uint16)(unsafe.Pointer(&mem_fill[v10])))
-				t39 := v10
-				v10 = t38
-				v11 = v10 - v6
-				p40 := v11
-				if uint32(v11) > uint32(v10) {
-					p40 = i32(0)
+				*(*uint16)(unsafe.Pointer(p_fill2)) = uint16(diff1)
+
+				t44 := int32(*(*uint16)(unsafe.Pointer(p_fill2 + 2)))
+				diff4 := t44 - v6
+				if diff4 < 0 {
+					diff4 = 0
 				}
-				*(*uint16)(unsafe.Pointer(&mem_fill[t39])) = uint16(p40)
-				
-				v10 = v9 + i32(4)
-				t41 := int32(*(*uint16)(unsafe.Pointer(&mem_fill[v10])))
-				t42 := v10
-				v10 = t41
-				v11 = v10 - v6
-				p43 := v11
-				if uint32(v11) > uint32(v10) {
-					p43 = i32(0)
+				*(*uint16)(unsafe.Pointer(p_fill2 + 2)) = uint16(diff4)
+
+				t41 := int32(*(*uint16)(unsafe.Pointer(p_fill2 + 4)))
+				diff3 := t41 - v6
+				if diff3 < 0 {
+					diff3 = 0
 				}
-				*(*uint16)(unsafe.Pointer(&mem_fill[t42])) = uint16(p43)
-				
-				v10 = v9 + i32(2)
-				t44 := int32(*(*uint16)(unsafe.Pointer(&mem_fill[v10])))
-				t45 := v10
-				v10 = t44
-				v11 = v10 - v6
-				p46 := v11
-				if uint32(v11) > uint32(v10) {
-					p46 = i32(0)
+				*(*uint16)(unsafe.Pointer(p_fill2 + 4)) = uint16(diff3)
+
+				t38 := int32(*(*uint16)(unsafe.Pointer(p_fill2 + 6)))
+				diff2 := t38 - v6
+				if diff2 < 0 {
+					diff2 = 0
 				}
-				*(*uint16)(unsafe.Pointer(&mem_fill[t45])) = uint16(p46)
-				
+				*(*uint16)(unsafe.Pointer(p_fill2 + 6)) = uint16(diff2)
+
+				p_fill2 -= 8
 				v9 = v9 + i32(-8)
 				v7 = v7 + i32(-4)
 				if v7 != 0 {
@@ -4104,63 +4074,29 @@ l6:
 		l3:
 			{
 				v4 = v10 + v18
-				v19 = v4 + i32(3)
-				t24 := int32(mem[uint32(v19)])
 				v5 = v17 + v18
-				t25 := int32(mem[uint32(v5+i32(3))])
-				if t24 != t25 {
-					goto l1
+
+				val1 := *(*uint64)(unsafe.Add(unsafe.Pointer(unsafe.SliceData(mem)), uintptr(uint32(v4+3))))
+				val2 := *(*uint64)(unsafe.Add(unsafe.Pointer(unsafe.SliceData(mem)), uintptr(uint32(v5+3))))
+				diff := val1 ^ val2
+
+				if diff != 0 {
+					mismatchByte := int32(bits.TrailingZeros64(diff) >> 3)
+					if mismatchByte < 7 {
+						v19 = v4 + i32(3) + mismatchByte
+						goto l1
+					}
+					v18 = v18 + i32(8)
+					goto l2
 				}
-				v19 = v4 + i32(4)
-				t26 := int32(mem[uint32(v19)])
-				t27 := int32(mem[uint32(v5+i32(4))])
-				if t26 != t27 {
-					goto l1
-				}
-				v19 = v4 + i32(5)
-				t28 := int32(mem[uint32(v19)])
-				t29 := int32(mem[uint32(v5+i32(5))])
-				if t28 != t29 {
-					goto l1
-				}
-				v19 = v4 + i32(6)
-				t30 := int32(mem[uint32(v19)])
-				t31 := int32(mem[uint32(v5+i32(6))])
-				if t30 != t31 {
-					goto l1
-				}
-				v19 = v4 + i32(7)
-				t32 := int32(mem[uint32(v19)])
-				t33 := int32(mem[uint32(v5+i32(7))])
-				if t32 != t33 {
-					goto l1
-				}
-				v19 = v4 + i32(8)
-				t34 := int32(mem[uint32(v19)])
-				t35 := int32(mem[uint32(v5+i32(8))])
-				if t34 != t35 {
-					goto l1
-				}
-				v19 = v4 + i32(9)
-				t36 := int32(mem[uint32(v19)])
-				t37 := int32(mem[uint32(v5+i32(9))])
-				if t36 != t37 {
-					goto l1
-				}
-				v19 = v18 + i32(2)
+
 				v18 = v18 + i32(8)
-				{
-					if uint32(v19) > uint32(i32(249)) {
-						goto l2
-					}
-					t38 := int32(mem[uint32(v4+i32(10))])
-					t39 := int32(mem[uint32(v5+i32(10))])
-					if t38&i32(255) == t39&i32(255) {
-						goto l3
-					}
+				if uint32(v18 - i32(6)) > uint32(i32(249)) {
+					goto l2
 				}
-			l2:
+				goto l3
 			}
+		l2:
 			v19 = v10 + v18 + i32(2)
 		l1:
 			v5 = v19 - v12
@@ -4571,7 +4507,6 @@ l17:
 			state_offset := int64(uint32(v0))
 
 		l16:
-			*(*uint32)(unsafe.Pointer(uintptr(mem_base) + uintptr(state_offset+108))) = uint32(v3)
 			{
 				if uint32(v3) > uint32(v5) {
 					goto l15
@@ -4591,19 +4526,19 @@ l17:
 				*(*uint16)(unsafe.Pointer(uintptr(mem_base) + uintptr(t121))) = uint16(t122)
 
 				opt_hash = v2
-				*(*uint32)(unsafe.Pointer(uintptr(mem_base) + uintptr(state_offset+72))) = uint32(v2)
 
 				// Fast unaligned 16-bit write using unsafe
 				*(*uint16)(unsafe.Pointer(uintptr(mem_base) + uintptr(v8))) = uint16(v3)
 			}
 		l15:
-			*(*uint32)(unsafe.Pointer(uintptr(mem_base) + uintptr(state_offset+120))) = uint32(v4)
 			v3 = v3 + i32(1)
 			v4 = v4 + i32(-1)
 			if v4 != i32(-1) {
 				goto l16
 			}
 			*(*uint32)(unsafe.Pointer(uintptr(mem_base) + uintptr(state_offset+108))) = uint32(v3)
+			*(*uint32)(unsafe.Pointer(uintptr(mem_base) + uintptr(state_offset+120))) = uint32(v4)
+			*(*uint32)(unsafe.Pointer(uintptr(mem_base) + uintptr(state_offset+72))) = uint32(opt_hash)
             store32(m.memory[int64(uint32(v0))+96:], uint32(i32(2)))
 			store32(m.memory[int64(uint32(v0))+104:], uint32(i32(0)))
 			if v7 != v6 {
@@ -4829,16 +4764,12 @@ func (m *Module) _inflate_fast(v0, v1 int32) {
 l55:
 	{
 		{
-			if uint32(v22) > uint32(i32(14)) {
-				goto l0
+			if uint32(v22) <= uint32(i32(14)) {
+				v8 += int32(uint32(*(*uint16)(unsafe.Pointer(&m.memory[v12]))) << uint32(v22))
+				v22 += 16
+				v12 += 2
 			}
-			t18 := int32(m.memory[uint32(v12)])
-			t19 := int32(m.memory[int64(uint32(v12))+1])
-			v8 = i32_shl(t18, v22) + v8 + i32_shl(t19, v22+i32(8))
-			v22 = v22 | i32(16)
-			v12 = v12 + i32(2)
 		}
-	l0:
 		t20 := v22
 		v24 = v21 + v8&v15<<2
 		t21 := int32(m.memory[int64(uint32(v24))+1])
@@ -5051,22 +4982,8 @@ l55:
 					}
 				l28:
 					{
-						t46 := int32(m.memory[uint32(v25)])
-						m.memory[uint32(v24)] = byte(t46)
-						t47 := int32(m.memory[int64(uint32(v25))+1])
-						m.memory[int64(uint32(v24))+1] = byte(t47)
-						t48 := int32(m.memory[int64(uint32(v25))+2])
-						m.memory[int64(uint32(v24))+2] = byte(t48)
-						t49 := int32(m.memory[int64(uint32(v25))+3])
-						m.memory[int64(uint32(v24))+3] = byte(t49)
-						t50 := int32(m.memory[int64(uint32(v25))+4])
-						m.memory[int64(uint32(v24))+4] = byte(t50)
-						t51 := int32(m.memory[int64(uint32(v25))+5])
-						m.memory[int64(uint32(v24))+5] = byte(t51)
-						t52 := int32(m.memory[int64(uint32(v25))+6])
-						m.memory[int64(uint32(v24))+6] = byte(t52)
-						t53 := int32(m.memory[int64(uint32(v25))+7])
-						m.memory[int64(uint32(v24))+7] = byte(t53)
+						// Demoscene style: replacing 8 bytes loop with single 64-bit MOV
+						*(*uint64)(unsafe.Pointer(&m.memory[v24])) = *(*uint64)(unsafe.Pointer(&m.memory[v25]))
 						v24 = v24 + i32(8)
 						v25 = v25 + i32(8)
 						v26 = v26 + i32(-8)
@@ -5117,22 +5034,7 @@ l55:
 					}
 				l34:
 					{
-						t57 := int32(m.memory[uint32(v25)])
-						m.memory[uint32(v24)] = byte(t57)
-						t58 := int32(m.memory[int64(uint32(v25))+1])
-						m.memory[uint32(v24+i32(1))] = byte(t58)
-						t59 := int32(m.memory[int64(uint32(v25))+2])
-						m.memory[uint32(v24+i32(2))] = byte(t59)
-						t60 := int32(m.memory[int64(uint32(v25))+3])
-						m.memory[uint32(v24+i32(3))] = byte(t60)
-						t61 := int32(m.memory[int64(uint32(v25))+4])
-						m.memory[uint32(v24+i32(4))] = byte(t61)
-						t62 := int32(m.memory[int64(uint32(v25))+5])
-						m.memory[uint32(v24+i32(5))] = byte(t62)
-						t63 := int32(m.memory[int64(uint32(v25))+6])
-						m.memory[uint32(v24+i32(6))] = byte(t63)
-						t64 := int32(m.memory[int64(uint32(v25))+7])
-						m.memory[uint32(v24+i32(7))] = byte(t64)
+						*(*uint64)(unsafe.Pointer(&m.memory[v24])) = *(*uint64)(unsafe.Pointer(&m.memory[v25]))
 						v24 = v24 + i32(8)
 						v25 = v25 + i32(8)
 						v26 = v26 + i32(-8)
@@ -5175,22 +5077,7 @@ l55:
 					}
 				l40:
 					{
-						t66 := int32(m.memory[uint32(v25)])
-						m.memory[uint32(v24)] = byte(t66)
-						t67 := int32(m.memory[int64(uint32(v25))+1])
-						m.memory[int64(uint32(v24))+1] = byte(t67)
-						t68 := int32(m.memory[int64(uint32(v25))+2])
-						m.memory[int64(uint32(v24))+2] = byte(t68)
-						t69 := int32(m.memory[int64(uint32(v25))+3])
-						m.memory[int64(uint32(v24))+3] = byte(t69)
-						t70 := int32(m.memory[int64(uint32(v25))+4])
-						m.memory[int64(uint32(v24))+4] = byte(t70)
-						t71 := int32(m.memory[int64(uint32(v25))+5])
-						m.memory[int64(uint32(v24))+5] = byte(t71)
-						t72 := int32(m.memory[int64(uint32(v25))+6])
-						m.memory[int64(uint32(v24))+6] = byte(t72)
-						t73 := int32(m.memory[int64(uint32(v25))+7])
-						m.memory[int64(uint32(v24))+7] = byte(t73)
+						*(*uint64)(unsafe.Pointer(&m.memory[v24])) = *(*uint64)(unsafe.Pointer(&m.memory[v25]))
 						v24 = v24 + i32(8)
 						v25 = v25 + i32(8)
 						v26 = v26 + i32(-8)
@@ -5238,22 +5125,7 @@ l55:
 					}
 				l45:
 					{
-						t76 := int32(m.memory[uint32(v25)])
-						m.memory[uint32(v24)] = byte(t76)
-						t77 := int32(m.memory[int64(uint32(v25))+1])
-						m.memory[int64(uint32(v24))+1] = byte(t77)
-						t78 := int32(m.memory[int64(uint32(v25))+2])
-						m.memory[int64(uint32(v24))+2] = byte(t78)
-						t79 := int32(m.memory[int64(uint32(v25))+3])
-						m.memory[int64(uint32(v24))+3] = byte(t79)
-						t80 := int32(m.memory[int64(uint32(v25))+4])
-						m.memory[int64(uint32(v24))+4] = byte(t80)
-						t81 := int32(m.memory[int64(uint32(v25))+5])
-						m.memory[int64(uint32(v24))+5] = byte(t81)
-						t82 := int32(m.memory[int64(uint32(v25))+6])
-						m.memory[int64(uint32(v24))+6] = byte(t82)
-						t83 := int32(m.memory[int64(uint32(v25))+7])
-						m.memory[int64(uint32(v24))+7] = byte(t83)
+						*(*uint64)(unsafe.Pointer(&m.memory[v24])) = *(*uint64)(unsafe.Pointer(&m.memory[v25]))
 						v24 = v24 + i32(8)
 						v25 = v25 + i32(8)
 						v26 = v26 + i32(-8)
@@ -5350,19 +5222,11 @@ l55:
 				v24 = i32(0)
 			l52:
 				{
-					v25 = v7 + v24
-					t101 := v25
-					v26 = v28 + v24
-					t102 := int32(m.memory[uint32(v26)])
-					m.memory[uint32(t101)] = byte(t102)
-					t103 := int32(m.memory[uint32(v26+i32(1))])
-					m.memory[uint32(v25+i32(1))] = byte(t103)
-					t104 := int32(m.memory[uint32(v26+i32(2))])
-					m.memory[uint32(v25+i32(2))] = byte(t104)
+					// Using 3-byte array copy for demographic efficiency
+					*(*[3]byte)(unsafe.Pointer(&m.memory[v7+v24])) = *(*[3]byte)(unsafe.Pointer(&m.memory[v28+v24]))
 					v24 = v24 + i32(3)
-					t105 := v27
 					v31 = v31 + i32(-3)
-					if uint32(t105+v31) > uint32(i32(2)) {
+					if uint32(v27+v31) > uint32(i32(2)) {
 						goto l52
 					}
 				}
@@ -7871,31 +7735,16 @@ func (m *Module) _inflate(v0, v1 int32) int32 {
 							if uint32(v26) < uint32(i32(7)) {
 								goto l220
 							}
-						l221:
-							{
-								t247 := int32(m.memory[uint32(v5)])
-								m.memory[uint32(v6)] = byte(t247)
-								t248 := int32(m.memory[int64(uint32(v5))+1])
-								m.memory[int64(uint32(v6))+1] = byte(t248)
-								t249 := int32(m.memory[int64(uint32(v5))+2])
-								m.memory[int64(uint32(v6))+2] = byte(t249)
-								t250 := int32(m.memory[int64(uint32(v5))+3])
-								m.memory[int64(uint32(v6))+3] = byte(t250)
-								t251 := int32(m.memory[int64(uint32(v5))+4])
-								m.memory[int64(uint32(v6))+4] = byte(t251)
-								t252 := int32(m.memory[int64(uint32(v5))+5])
-								m.memory[int64(uint32(v6))+5] = byte(t252)
-								t253 := int32(m.memory[int64(uint32(v5))+6])
-								m.memory[int64(uint32(v6))+6] = byte(t253)
-								t254 := int32(m.memory[int64(uint32(v5))+7])
-								m.memory[int64(uint32(v6))+7] = byte(t254)
-								v6 = v6 + i32(8)
-								v5 = v5 + i32(8)
-								v23 = v23 + i32(-8)
-								if v23 != 0 {
-									goto l221
-								}
-							}
+				l221:
+					{
+						*(*uint64)(unsafe.Pointer(&m.memory[v6])) = *(*uint64)(unsafe.Pointer(&m.memory[v5]))
+						v6 = v6 + i32(8)
+						v5 = v5 + i32(8)
+						v23 = v23 + i32(-8)
+						if v23 != 0 {
+							goto l221
+						}
+					}
 						l220:
 							v20 = v20 - v25
 							t255 := int32(load32(m.memory[int64(uint32(v4))+68:]))
@@ -14561,32 +14410,32 @@ func i32_rotl(x, y int32) int32 {
 
 //go:nosplit
 func load16(b []byte) uint16 {
-	return binary.LittleEndian.Uint16(b)
+	return *(*uint16)(unsafe.Pointer(unsafe.SliceData(b)))
 }
 
 //go:nosplit
 func store16(b []byte, v uint16) {
-	binary.LittleEndian.PutUint16(b, v)
+	*(*uint16)(unsafe.Pointer(unsafe.SliceData(b))) = v
 }
 
 //go:nosplit
 func load32(b []byte) uint32 {
-	return binary.LittleEndian.Uint32(b)
+	return *(*uint32)(unsafe.Pointer(unsafe.SliceData(b)))
 }
 
 //go:nosplit
 func store32(b []byte, v uint32) {
-	binary.LittleEndian.PutUint32(b, v)
+	*(*uint32)(unsafe.Pointer(unsafe.SliceData(b))) = v
 }
 
 //go:nosplit
 func load64(b []byte) uint64 {
-	return binary.LittleEndian.Uint64(b)
+	return *(*uint64)(unsafe.Pointer(unsafe.SliceData(b)))
 }
 
 //go:nosplit
 func store64(b []byte, v uint64) {
-	binary.LittleEndian.PutUint64(b, v)
+	*(*uint64)(unsafe.Pointer(unsafe.SliceData(b))) = v
 }
 
 func memory_grow(mem *[]byte, delta, max int64) int64 {
@@ -14627,6 +14476,10 @@ func memory_fill[T uint32 | uint64](mem []byte, dest T, val int32, n T) {
 	y := x + uint64(n)
 	buf := mem[x:y]
 	if len(buf) > 0 {
+		if val == 0 {
+			clear(buf)
+			return
+		}
 		buf[0] = byte(val)
 		for i := 1; i < len(buf); {
 			chunk := min(i, 8192)

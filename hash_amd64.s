@@ -1,3 +1,5 @@
+//go:build amd64 && !noasm
+
 #include "textflag.h"
 
 TEXT ·updateHashChain(SB), NOSPLIT, $0-56

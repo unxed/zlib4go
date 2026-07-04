@@ -1,3 +1,5 @@
+//go:build amd64 && !noasm
+
 // Ultra-Safe & Fast Longest Match (Go ASM AMD64 ABI0 compliant)
 // Prevents out-of-bounds panics by strictly limiting comparison to s.lookahead.
 #include "textflag.h"
